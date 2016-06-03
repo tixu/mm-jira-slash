@@ -1,0 +1,6 @@
+package: git01.smals.be/jira
+import:
+- package: github.com/andygrunwald/go-jira
+  subpackages:
+  - github.com\andygrunwald\go-jira
+- package: github.com/gorilla/schema

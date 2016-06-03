@@ -1,0 +1,24 @@
+hash: 33f77e565ac6f82359f14547be2be9af9c8645a5f43a80a036976035f21fcd6f
+updated: 2016-06-02T22:57:50.7675338+02:00
+imports:
+- name: github.com/andygrunwald/go-jira
+  version: 0821e0283a513e927e454fca0b6e05ac6e5bab8a
+  subpackages:
+  - github.com\andygrunwald\go-jira
+- name: github.com/gorilla/context
+  version: aed02d124ae4a0e94fea4541c8effd05bf0c8296
+  subpackages:
+  - github.com\gorilla\context
+- name: github.com/gorilla/handlers
+  version: 66e6c6f01d8da976ee113437745ca029c2b585a6
+  subpackages:
+  - github.com\gorilla\handlers
+- name: github.com/gorilla/mux
+  version: bd09be08ed4377796d312df0a45314e11b8f5dc1
+  subpackages:
+  - github.com\gorilla\mux
+- name: github.com/gorilla/schema
+  version: 08023a0215e7fc27a9aecd8b8c50913c40019478
+  subpackages:
+  - github.com\gorilla\schema
+devImports: []
