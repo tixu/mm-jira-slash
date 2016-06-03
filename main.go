@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"git01.smals.be/jira/mmjira"
 
@@ -75,7 +76,7 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Received a request %+v", mm)
 	issueID := mm.text
-	c, err := mmjira.New("http://jira.smals.be", "xz", "pp")
+	c, err := mmjira.New("https://jira.smals.be", "xz", "H$grs3OmT")
 	if err != nil {
 		http.Error(w, "jira Client creation issue", http.StatusNotFound)
 
@@ -94,13 +95,18 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	tokenPtr := flag.String("token", "", "mattermost token value")
+	portPtr := flag.Int64("port", 3, "port to listen to")
+
 	flag.Parse()
 	inittoken = *tokenPtr
-
+	var s string
+	s = ":"
+	s += strconv.FormatInt(*portPtr, 10)
 	r := mux.NewRouter()
-	r.Handle("/", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(testHandler)))
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
+	r.Handle("/jira", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(testHandler)))
+	r.PathPrefix("/static").Handler(http.FileServer(http.Dir("./static/")))
 	http.Handle("/", r)
-	log.Println("starting server...")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Printf("starting server... on %s", s)
+
+	log.Fatal(http.ListenAndServe(s, r))
 }

@@ -3,6 +3,7 @@ package mmjira
 import (
 	"bytes"
 	"html/template"
+	"log"
 	"net/url"
 	"strings"
 
@@ -47,15 +48,18 @@ func New(endpoint string, user string, password string) (*Cli, error) {
 
 func (c *Cli) ViewTicket(issueID string) (issueTxt string, err error) {
 
+	log.Printf("received %s", issueID)
+	log.Printf("Cli %+v", c)
 	if res, err := c.JiraClient.Authentication.AcquireSessionCookie(c.User, c.Password); err != nil || res == false {
+		log.Fatalf("Authentication error %s", err.Error())
 		return "", err
 	}
-
+	log.Printf("auth done")
 	issue, _, err := c.JiraClient.Issue.Get(issueID)
 	if err != nil {
 		return "", err
 	}
-
+	log.Printf("issue %+v", issue)
 	t := template.New("Issue template")
 
 	t, err = t.Parse(tmpl)
