@@ -4,3 +4,4 @@ import:
   subpackages:
   - github.com\andygrunwald\go-jira
 - package: github.com/gorilla/schema
+- package: github.com/mattn/go-shellwords

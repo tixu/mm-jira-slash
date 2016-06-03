@@ -1,13 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
+
+	"git01.smals.be/jira/mmjira"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/gorilla/handlers"
@@ -15,19 +15,6 @@ import (
 )
 
 var inittoken string
-
-const tmpl = `# JIRA
-## Summary
-{{.Fields.Summary}}
-## Description
-{{.Fields.Description}}
-## Assignee
-{{.Fields.Assignee.DisplayName}}
-## Info
-|Fields  |Status                   |
-|:-------|:------------------------|
-|Priority|{{.Fields.Priority.Name}}|
-|Status|{{.Fields.Status.Name}}|`
 
 // Response is used to store result that must be sent bak to mattermost.
 type Response struct {
@@ -67,6 +54,15 @@ func analyseRequest(r *http.Request) (response MattermostRequest, err error) {
 	return response, err
 }
 
+type jiraAction func(args ...string)
+
+/*func analysecommand(cmd string) {
+	p := shellwords.NewParser()
+	args, err := p.Parse(cmd)
+
+	// args should be ["./foo", "bar"]
+}*/
+
 func testHandler(w http.ResponseWriter, r *http.Request) {
 	mm, err := analyseRequest(r)
 	if err != nil {
@@ -78,40 +74,20 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Received a request %+v", mm)
-	issueid := mm.text
-	jiraClient, _ := jira.NewClient(nil, "https://jira.smals.be/")
-
-	if res, err := jiraClient.Authentication.AcquireSessionCookie("xz", "H$grs3OmT"); err != nil || res == false {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-
-	}
+	issueID := mm.text
+	c, err := mmjira.New("http://jira.smals.be", "xz", "pp")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "jira Client creation issue", http.StatusNotFound)
+
 	}
-
-	issue, _, err := jiraClient.Issue.Get(issueid)
-
-	t := template.New("Issue template")
-	/*		tmpl := `# JIRA
-			## Summary
-			{{.Fields.Summary}}
-			## Description
-			{{.Fields.Description}}
-			## Assignee
-			{{.Fields.Assignee.DisplayName}}
-			## Info
-			|Fields  |Status                   |
-			|:-------|:------------------------|
-			|Priority|{{.Fields.Priority.Name}}|
-			|Status|{{.Fields.Status.Name}}|` */
-	t, err = t.Parse(tmpl)
+	issueTxt, err := c.ViewTicket(issueID)
 	if err != nil {
-		panic(err)
+		http.Error(w, "jira Client invocation issue", http.StatusNotAcceptable)
+
 	}
-	buff := bytes.NewBufferString("")
-	t.Execute(buff, issue)
-	s, _ := json.Marshal(&Response{Type: "ephemeral", Text: buff.String()})
+	s, _ := json.Marshal(&Response{Type: "ephemeral", Text: issueTxt})
 	log.Println(string(s))
+
 	w.Write(s)
 
 }
