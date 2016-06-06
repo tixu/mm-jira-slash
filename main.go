@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,12 +11,21 @@ import (
 
 	"git01.smals.be/jira/mmjira"
 
-	jira "github.com/andygrunwald/go-jira"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/mattn/go-shellwords"
 )
 
 var inittoken string
+
+type cmdError struct {
+	cmd  string
+	prob string
+}
+
+func (e *cmdError) Error() string {
+	return fmt.Sprintf("%s - %s", e.cmd, e.prob)
+}
 
 // Response is used to store result that must be sent bak to mattermost.
 type Response struct {
@@ -37,8 +47,6 @@ type MattermostRequest struct {
 	userName    string `schema:"user_name"`
 }
 
-var jiraClient jira.Client
-
 func analyseRequest(r *http.Request) (response MattermostRequest, err error) {
 	r.ParseForm()
 	response = MattermostRequest{channelID: r.FormValue("channel_id"),
@@ -55,7 +63,9 @@ func analyseRequest(r *http.Request) (response MattermostRequest, err error) {
 	return response, err
 }
 
-type jiraAction func(args ...string)
+type jiraAction func(args ...string) string
+
+var commands map[string]jiraAction
 
 /*func analysecommand(cmd string) {
 	p := shellwords.NewParser()
@@ -74,14 +84,30 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad token", http.StatusForbidden)
 	}
 
+	args, err := shellwords.Parse(mm.text)
+
+	cmd, args := args[0], args[1:len(args)]
+	log.Printf("%s:%#v", cmd, args)
+
 	log.Printf("Received a request %+v", mm)
-	issueID := mm.text
+
 	c, err := mmjira.New("https://jira.smals.be", "xz", "H$grs3OmT")
 	if err != nil {
 		http.Error(w, "jira Client creation issue", http.StatusNotFound)
 
 	}
-	issueTxt, err := c.ViewTicket(issueID)
+	var issueTxt string
+
+	switch cmd {
+	case "VIEW":
+		issueTxt, err = c.ViewTicket(args...)
+	case "ASSIGN":
+		issueTxt, err = c.AssigntoTicket(args...)
+
+	default:
+		err = &cmdError{cmd: cmd, prob: "unsupported operation"}
+	}
+
 	if err != nil {
 		http.Error(w, "jira Client invocation issue", http.StatusNotAcceptable)
 
